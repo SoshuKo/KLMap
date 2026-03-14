@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カラベイ高速鉄道 運賃・経路検索</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --light: #ecf0f1;
+            --border: #bdc3c7;
+            --success: #27ae60;
+            --warning: #f39c12;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .header-border {
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        /* 戻るリンクのスタイル追加 */
+        .back-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+        .back-link:hover {
+            background-color: #1a252f;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        select, input[type="radio"], input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: white;
+        }
+
+        .radio-group, .checkbox-group {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        button.calc-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        button.calc-btn:hover {
+            background-color: #2980b9;
+        }
+
+        #result {
+            margin-top: 30px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .result-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-body {
+            padding: 20px;
+        }
+
+        .cost-display {
+            font-size: 2.5em;
+            color: var(--accent);
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .cost-unit {
+            font-size: 0.4em;
+            color: #7f8c8d;
+        }
+
+        .details-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .details-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .details-list li:last-child {
+            border-bottom: none;
+        }
+
+        .route-path {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 20px;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: white;
+        }
+        .bg-exp { background-color: var(--warning); }
+        .bg-loc { background-color: var(--success); }
+        .bg-int { background-color: #8e44ad; }
+
+        .note {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>湾岸・ハヴァレイキ鉄道 運賃検索</h1>
+    
+    <div class="header-border" style="text-align: center;">
+        <a href="index.html" class="back-link">← 架空地図ビューアに戻る</a>
+    </div>
+
+    <div class="form-group">
+        <label for="startStation">出発駅</label>
+        <select id="startStation"></select>
+    </div>
+
+    <div class="form-group">
+        <label for="endStation">到着駅</label>
+        <select id="endStation"></select>
+    </div>
+
+    <div class="form-group">
+        <label>利用列車種別</label>
+        <div class="radio-group">
+            <label class="radio-item"><input type="radio" name="trainType" value="local" checked> 普通 (Local)</label>
+            <label class="radio-item"><input type="radio" name="trainType" value="express"> 急行 (Express)</label>
+            <label class="radio-item"><input type="radio" name="trainType" value="limited"> 特急 (Limited Exp)</label>
+            <label class="radio-item"><input type="radio" name="trainType" value="international"> 国際特急 (Int'l Ltd Exp)</label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>座席クラス (特急・国際特急のみ)</label>
+        <div class="radio-group">
+            <label class="radio-item"><input type="radio" name="seatClass" value="standard" checked> 指定席/自由席 (Standard)</label>
+            <label class="radio-item"><input type="radio" name="seatClass" value="alter"> アルタークラス (Alter)</label>
+            <label class="radio-item"><input type="radio" name="seatClass" value="gannet"> ガネットクラス (Gannet)</label>
+        </div>
+        <p class="note">※普通・急行列車はスタンダードのみ計算されます。</p>
+    </div>
+
+    <button class="calc-btn" onclick="calculateRoute()">運賃・時間を計算する</button>
+
+    <div id="result">
+        <div class="result-card">
+            <div class="result-header">
+                <span id="resRouteHeader">経路情報</span>
+                <span id="resTime" class="badge bg-loc">--時間--分</span>
+            </div>
+            <div class="result-body">
+                <div class="cost-display">
+                    <span id="totalCost">0.00</span>
+                    <span class="cost-unit">クーケイ</span>
+                </div>
+                <ul class="details-list">
+                    <li><span>乗車距離</span> <span id="resDistance">0.0 km</span></li>
+                    <li><span>基本運賃</span> <span id="resBaseFare">0.00 クーケイ</span></li>
+                    <li id="rowUrban"><span>都市圏特別加算</span> <span>+0.50 クーケイ</span></li>
+                    <li id="rowExpress"><span>特急料金</span> <span id="resExpressFee">0.00 クーケイ</span></li>
+                    <li id="rowSeat"><span>座席特別料金</span> <span id="resSeatFee">0.00 クーケイ</span></li>
+                    <li id="rowIntl"><span>国際特急料金</span> <span>+25.00 クーケイ</span></li>
+                </ul>
+                <div class="route-path">
+                    <strong>経由ルート:</strong><br>
+                    <span id="resPath">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- データ定義 ---
+    
+    // 駅間距離データ (双方向グラフとして構築)
+    // ノード間の距離を定義
+    const edges = [
+        // 〈湾岸線〉
+        { u: "ギュラベイ", v: "ティナネイキ", d: 57.7 },
+        { u: "ティナネイキ", v: "ギリディネイ", d: 23.8 },
+        { u: "ギリディネイ", v: "ミリフマレイ", d: 18.4 },
+        { u: "ミリフマレイ", v: "ショリギナセイ", d: 23.7 },
+        { u: "ショリギナセイ", v: "イラー中央", d: 18.7 },
+        { u: "イラー中央", v: "イリビレイセイ", d: 33.9 },
+        { u: "イリビレイセイ", v: "ラゼハビメイ", d: 39.9 },
+        { u: "ラゼハビメイ", v: "フミシラレイ", d: 21.2 },
+        { u: "フミシラレイ", v: "ナピリラセイ", d: 21.6 },
+        { u: "ナピリラセイ", v: "ダリギナセイ", d: 52.4 },
+        { u: "ダリギナセイ", v: "ガネイキ", d: 51.0 },
+        { u: "ガネイキ", v: "ネウリフマレイ", d: 36.1 },
+        { u: "ネウリフマレイ", v: "マウキビレイ", d: 26.5 },
+        { u: "マウキビレイ", v: "セラン中央", d: 27.1 },
+        { u: "セラン中央", v: "リウニシェベン", d: 30.8 },
+        { u: "リウニシェベン", v: "ミュネイキ", d: 45.7 },
+        { u: "ミュネイキ", v: "デュラベイ", d: 40.3 },
+
+        // 〈ハヴァレイキ線〉
+        { u: "タネイ・トライポート", v: "イラー中央", d: 5.0 },
+        { u: "イラー中央", v: "マリディア", d: 33.0 },
+        { u: "マリディア", v: "ギジェイキニ", d: 38.0 },
+        { u: "ギジェイキニ", v: "ティナレイキ", d: 42.2 },
+        { u: "ティナレイキ", v: "ミラフレイ", d: 41.9 },
+        { u: "ミラフレイ", v: "ナーキ", d: 39.8 },
+        { u: "ナーキ", v: "アーケイ中央", d: 32.3 },
+        { u: "アーケイ中央", v: "ティレリウレイ", d: 17.7 },
+        { u: "ティレリウレイ", v: "ラデイキ", d: 25.4 },
+        { u: "ラデイキ", v: "ヴィーラー", d: 29.0 },
+        { u: "ヴィーラー", v: "アラデイキ", d: 43.6 },
+        { u: "アラデイキ", v: "ギザレイキ", d: 48.1 },
+        { u: "ギザレイキ", v: "ヤーキ", d: 38.3 },
+        { u: "ヤーキ", v: "ゾルアー", d: 25.1 },
+        { u: "ゾルアー", v: "ノビレイ", d: 21.9 },
+        { u: "ノビレイ", v: "ハヴァレイキ", d: 33.0 },
+        { u: "ハヴァレイキ", v: "ダーフレイ", d: 26.8 },
+        { u: "ダーフレイ", v: "ビライタン", d: 45.6 },
+        { u: "ビライタン", v: "ゾパイタン", d: 42.4 },
+        { u: "ゾパイタン", v: "ヴィシャーン", d: 43.5 },
+        { u: "ヴィシャーン", v: "ヤシャーン", d: 14.6 },
+
+        // 〈セラン線〉
+        { u: "セラン中央", v: "ビーパン", d: 42.4 },
+        { u: "ビーパン", v: "キカーン", d: 20.8 },
+        { u: "キカーン", v: "マリアネイ", d: 21.8 },
+        { u: "マリアネイ", v: "ハリアネイ", d: 31.3 },
+        { u: "ハリアネイ", v: "ギリディウネイ", d: 100.32 }, 
+        { u: "ギリディウネイ", v: "アーケイ中央", d: 20.4 }
+    ];
+
+    const urbanStations = [
+        "タネイ・トライポート", "イラー中央", "マリディア", "ギジェイキニ", 
+        "ティナレイキ", "ミラフレイ", "ナーキ", "アーケイ中央", 
+        "ティレリウレイ", "ラデイキ"
+    ];
+
+    // --- ロジック実装 ---
+
+    const graph = {};
+    const stationSet = new Set();
+
+    edges.forEach(edge => {
+        if (!graph[edge.u]) graph[edge.u] = [];
+        if (!graph[edge.v]) graph[edge.v] = [];
+        graph[edge.u].push({ node: edge.v, weight: edge.d });
+        graph[edge.v].push({ node: edge.u, weight: edge.d });
+        stationSet.add(edge.u);
+        stationSet.add(edge.v);
+    });
+
+    const stations = Array.from(stationSet).sort();
+    const startSel = document.getElementById('startStation');
+    const endSel = document.getElementById('endStation');
+
+    const priorityStations = ["イラー中央", "セラン中央", "アーケイ中央", "ギュラベイ", "デュラベイ", "ハヴァレイキ", "タネイ・トライポート"];
+    const sortedStations = stations.slice().sort((a, b) => {
+        const idxA = priorityStations.indexOf(a);
+        const idxB = priorityStations.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b, "ja");
+    });
+
+    sortedStations.forEach(st => {
+        startSel.add(new Option(st, st));
+        endSel.add(new Option(st, st));
+    });
+    endSel.selectedIndex = 1; 
+
+    function findShortestPath(start, end) {
+        const distances = {};
+        const previous = {};
+        const queue = new Set(stations);
+
+        stations.forEach(st => {
+            distances[st] = Infinity;
+            previous[st] = null;
+        });
+        distances[start] = 0;
+
+        while (queue.size > 0) {
+            let minNode = null;
+            for (const node of queue) {
+                if (minNode === null || distances[node] < distances[minNode]) {
+                    minNode = node;
+                }
+            }
+
+            if (minNode === end) break;
+            if (distances[minNode] === Infinity) break;
+
+            queue.delete(minNode);
+
+            const neighbors = graph[minNode];
+            if (neighbors) {
+                for (const neighbor of neighbors) {
+                    if (queue.has(neighbor.node)) {
+                        const alt = distances[minNode] + neighbor.weight;
+                        if (alt < distances[neighbor.node]) {
+                            distances[neighbor.node] = alt;
+                            previous[neighbor.node] = minNode;
+                        }
+                    }
+                }
+            }
+        }
+
+        const path = [];
+        let u = end;
+        if (previous[u] !== null || u === start) {
+            while (u !== null) {
+                path.unshift(u);
+                u = previous[u];
+            }
+        }
+
+        return { distance: distances[end], path: path };
+    }
+
+    function calculateRoute() {
+        const start = document.getElementById('startStation').value;
+        const end = document.getElementById('endStation').value;
+        const trainType = document.querySelector('input[name="trainType"]:checked').value;
+        const seatClass = document.querySelector('input[name="seatClass"]:checked').value;
+
+        if (start === end) {
+            alert("出発駅と到着駅は異なる駅を選択してください。");
+            return;
+        }
+
+        const result = findShortestPath(start, end);
+        const distance = result.distance;
+        
+        if (distance === Infinity) {
+            alert("経路が見つかりません（接続がない可能性があります）。");
+            return;
+        }
+
+        let totalFare = 0;
+        let baseFare = distance * 0.05;
+
+        let isUrban = true;
+        for (const st of result.path) {
+            if (!urbanStations.includes(st)) {
+                isUrban = false;
+                break;
+            }
+        }
+        const urbanFee = isUrban ? 0.5 : 0;
+
+        let isExpress = (trainType === 'limited' || trainType === 'international');
+        let expressFee = isExpress ? (distance * 0.5) : 0;
+
+        let intlFee = (trainType === 'international') ? 25.0 : 0;
+
+        let seatFee = 0;
+        if (isExpress) {
+            if (seatClass === 'gannet') {
+                seatFee = distance * 1.0;
+            } else if (seatClass === 'alter') {
+                seatFee = distance * 0.5;
+            }
+        }
+
+        totalFare = baseFare + urbanFee + expressFee + seatFee + intlFee;
+
+        let speed = 40;
+        if (trainType === 'express') speed = 60;
+        if (isExpress) speed = 85;
+
+        const hoursDecimal = distance / speed;
+        const hours = Math.floor(hoursDecimal);
+        const minutes = Math.round((hoursDecimal - hours) * 60);
+
+        document.getElementById('totalCost').textContent = totalFare.toFixed(2);
+        document.getElementById('resDistance').textContent = distance.toFixed(1) + " km";
+        document.getElementById('resBaseFare').textContent = baseFare.toFixed(2) + " クーケイ";
+        document.getElementById('resExpressFee').textContent = expressFee.toFixed(2) + " クーケイ";
+        document.getElementById('resSeatFee').textContent = seatFee.toFixed(2) + " クーケイ";
+
+        document.getElementById('rowUrban').style.display = isUrban ? 'flex' : 'none';
+        document.getElementById('rowExpress').style.display = isExpress ? 'flex' : 'none';
+        document.getElementById('rowSeat').style.display = (isExpress && seatFee > 0) ? 'flex' : 'none';
+        document.getElementById('rowIntl').style.display = (intlFee > 0) ? 'flex' : 'none';
+
+        document.getElementById('resPath').innerHTML = result.path.join(" ➜ ");
+
+        const timeBadge = document.getElementById('resTime');
+        timeBadge.textContent = `約 ${hours}時間 ${minutes}分`;
+        
+        timeBadge.className = 'badge';
+        if (trainType === 'international') timeBadge.classList.add('bg-int');
+        else if (isExpress) timeBadge.classList.add('bg-exp');
+        else timeBadge.classList.add('bg-loc');
+
+        document.getElementById('result').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

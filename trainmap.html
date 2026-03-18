@@ -217,8 +217,8 @@
 <body>
   <div class="wrap">
     <h1>カラベイ総合乗換案内</h1>
-    <div class="top-link"><a class="back-link" href="index.html">カラベイ地理アーカイブへ戻る</a> <a class="back-link" href="trainmap02.html">路線図(trainmap02)へ</a></div>
-    <p class="sub">湾岸線・ハヴァレイキ線・セラン線・KIRT貨物短絡線・KMRTゴネイキ線・ツァパ線・地下鉄1/2号線・デュラベイBRT対応</p>
+    <div class="top-link"><a class="back-link" href="index.html">カラベイ地理アーカイブへ戻る</a> <a class="back-link" href="trainmap02.html">路線図(trainmap02)へ</a> </div>
+    <p class="sub">湾岸線・ハヴァレイキ線・セラン線・KIRT貨物短絡線・KMRTゴネイキ線・ツァパ線・地下鉄1/2/3号線・デュラベイBRT対応</p>
 
     <div class="grid">
       <div>
@@ -301,6 +301,7 @@
       "ツァパ線": { mode: "rail", speed: 55, timetable: "上下とも30分サイクル（00/30, 15/45）" },
       "地下鉄1号線": { mode: "subway", speed: 35, timetable: "00/10/20/30/40/50発（10分間隔）" },
       "地下鉄2号線": { mode: "subway", speed: 35, timetable: "00/10/20/30/40/50発（10分間隔）" },
+      "地下鉄3号線": { mode: "subway", speed: 46, timetable: "KLV-7形700番台(再生車)/設計最高100km/h。キラディウネイ方面: 毎時00/20先行・10待避、ティナレイキ方面: 毎時05/25先行・15待避" },
       "デュラベイBRT": { mode: "brt", speed: 85, timetable: "ラッシュ15分、通常30分（本文ダイヤ）" }
     };
 
@@ -313,6 +314,7 @@
       "ツァパ線": ["普通"],
       "地下鉄1号線": ["普通"],
       "地下鉄2号線": ["普通"],
+      "地下鉄3号線": ["普通"],
       "デュラベイBRT": ["普通"]
     };
 
@@ -391,6 +393,11 @@
     addLine("地下鉄2号線",
       ["アーケイ中央","ナナゼイ","ラグワー","フリカウ","イマ"],
       [2.0,2.0,2.0,2.0]
+    );
+
+    addLine("地下鉄3号線",
+      ["ティナレイキ","エミエ","ファタキ","アダウ","ザレイキ","シャーキ","マダキ","マリア・ド・ルミア","ディウニケネイ","ノロロキ","ロロキ","イマン","アガリア","キラディウネイ"],
+      [1.4,2.3,1.8,2.2,1.4,2.6,3.6,3.4,3.2,3.8,2.3,3.6,3.6]
     );
 
     addLine("デュラベイBRT",
@@ -664,11 +671,31 @@
         return 6;
       }
       if (line === "地下鉄2号線") return 6;
+      if (line === "地下鉄3号線") {
+        const metro3 = {
+          "ティナレイキ|エミエ": 2,
+          "エミエ|ファタキ": 2,
+          "ファタキ|アダウ": 1,
+          "アダウ|ザレイキ": 2,
+          "ザレイキ|シャーキ": 1,
+          "シャーキ|マダキ": 2,
+          "マダキ|マリア・ド・ルミア": 4,
+          "マリア・ド・ルミア|ディウニケネイ": 3,
+          "ディウニケネイ|ノロロキ": 3,
+          "ノロロキ|ロロキ": 3,
+          "ロロキ|イマン": 2,
+          "イマン|アガリア": 3,
+          "アガリア|キラディウネイ": 3
+        };
+        const key = `${from}|${to}`;
+        const rev = `${to}|${from}`;
+        return metro3[key] || metro3[rev] || 3;
+      }
       const base = lines[line].speed * speedFactorByType(type);
       return Math.max(1, Math.round((dist / base) * 60));
     }
 
-    function scheduleRule(line, type) {
+    function scheduleRule(line, type, direction = "forward") {
       const byLine = {
         "湾岸線": {
           "普通": { minutes: [7, 37], everyHour: true },
@@ -702,6 +729,11 @@
         },
         "地下鉄2号線": {
           "普通": { minutes: [0,10,20,30,40,50], everyHour: true }
+        },
+        "地下鉄3号線": {
+          "普通": direction === "forward"
+            ? { minutes: [0,10,20], everyHour: true }
+            : { minutes: [5,15,25], everyHour: true }
         },
         "デュラベイBRT": {
           "普通": { mode: "brt" }
@@ -762,7 +794,7 @@
       }
       const direction = lineDirection(group.line, group.from, group.to);
       const seqDir = directionStations(group.line, direction);
-      const rule = scheduleRule(group.line, group.type);
+      const rule = scheduleRule(group.line, group.type, direction);
       const { dep, arr } = offsetsForLine(group.line, group.type, direction);
       const stopSet = getStopSet(group.line, group.type);
 
@@ -981,6 +1013,7 @@
         ["ツァパ線", "ダリギナセイ - ノゴー", lines["ツァパ線"].timetable, "5区間（資料値）", "0.05K/km"],
         ["地下鉄1号線", "トライポート - ダレイ", lines["地下鉄1号線"].timetable, "6区間（5km+2km系）", "0.25K/1乗車"],
         ["地下鉄2号線", "アーケイ中央 - イマ", lines["地下鉄2号線"].timetable, "4区間（各2km）", "0.25K/1乗車"],
+        ["地下鉄3号線", "ティナレイキ - キラディウネイ", lines["地下鉄3号線"].timetable, "13区間（計35.2km）", "0.25K/1乗車"],
         ["デュラベイBRT", "ミュネイキ - デュラル・コンビナート", lines["デュラベイBRT"].timetable, "7区間（総距離204.3km）", "0.20K/km"]
       ];
 
@@ -1193,4 +1226,6 @@
   </script>
 </body>
 </html>
+
+
 

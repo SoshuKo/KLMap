@@ -1,0 +1,610 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>カラベイ 路線図</title>
+  <style>
+    :root {
+      --ink: #1f2a37;
+      --brand: #0d9488;
+      --bg: #f3f7f9;
+      --card: #ffffff;
+      --line: #d6e0e5;
+      --accent: #1d4ed8;
+      --warn: #b45309;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(160deg, #edf5f7, #f8fbff);
+      font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color: var(--ink);
+      padding: 16px;
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.58rem;
+    }
+
+    .top-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .top-link {
+      display: inline-block;
+      text-decoration: none;
+      color: #0b4b63;
+      border: 1px solid #9cc6d7;
+      background: #eaf6fb;
+      border-radius: 8px;
+      padding: 7px 11px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .toolbar {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f9fcff;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .toolbar label { font-weight: 700; }
+
+    select {
+      border: 1px solid #b9c7d0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 14px;
+      background: #fff;
+      width: 100%;
+      max-width: 260px;
+    }
+
+    .station-info {
+      margin-top: 10px;
+      border: 1px solid #d4ece9;
+      background: #f1f8f7;
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: #234457;
+      font-size: 0.92rem;
+    }
+
+    .legend {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .legend-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .legend ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      font-size: 0.92rem;
+    }
+
+    .icon {
+      display: inline-block;
+      width: 1.4em;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .i-hub { color: #0f4c5c; }
+    .i-semi { color: #c2410c; }
+    .i-rapid { color: #1d4ed8; }
+    .i-local { color: #4b5563; }
+
+    .lines {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+    }
+
+    .line-card {
+      border: 1px solid #d8e5ef;
+      border-radius: 8px;
+      padding: 8px;
+      background: #f9fcff;
+    }
+
+    .line-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.94rem;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      flex: 0 0 auto;
+    }
+
+    .types {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      font-size: 12px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid #c8d8e7;
+      background: #f1f7fd;
+    }
+
+    .map-wrap {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px;
+      overflow: auto;
+    }
+
+    #routeMap {
+      width: 1950px;
+      height: 980px;
+      display: block;
+      background:
+        radial-gradient(circle at 82% 15%, rgba(14, 116, 144, 0.08), transparent 35%),
+        radial-gradient(circle at 15% 82%, rgba(13, 148, 136, 0.06), transparent 42%),
+        #ffffff;
+      border-radius: 8px;
+    }
+
+    .line-label {
+      font-size: 13px;
+      font-weight: 700;
+      fill: #17202a;
+    }
+
+    .station-label {
+      font-size: 12px;
+      fill: #1f2d3b;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .label-bg {
+      fill: rgba(255, 255, 255, 0.92);
+      stroke: #d8e5ef;
+      stroke-width: 1;
+      rx: 4;
+      ry: 4;
+      cursor: pointer;
+    }
+
+    .label-leader {
+      stroke: #b2c2d0;
+      stroke-width: 1;
+      stroke-dasharray: 2 2;
+      pointer-events: none;
+    }
+
+    .marker {
+      stroke: #0f172a;
+      stroke-width: 1;
+      cursor: pointer;
+    }
+
+    .interchange {
+      fill: none;
+      stroke: #0f172a;
+      stroke-width: 2;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .dim {
+      opacity: 0.16;
+    }
+
+    .selected-label {
+      font-weight: 700;
+      fill: #0b3d91;
+    }
+
+    .selected-bg {
+      fill: #e8f1ff;
+      stroke: #5a8dee;
+    }
+
+    .selected-marker {
+      stroke: #0b3d91;
+      stroke-width: 2;
+    }
+
+    @media (max-width: 860px) {
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      #routeMap {
+        width: 1800px;
+        height: 940px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <h1>カラベイ 路線図</h1>
+      <div class="top-links">
+        <a class="top-link" href="trainmap.html">総合乗換案内へ</a>
+      </div>
+    </div>
+
+    <section class="toolbar">
+      <label for="serviceFilter">種別ハイライト</label>
+      <select id="serviceFilter">
+        <option value="all">全種別</option>
+        <option value="local">普通</option>
+        <option value="rapid">急行</option>
+        <option value="semiExpress">区間特急</option>
+        <option value="limited">特急</option>
+      </select>
+    </section>
+
+    <div id="stationInfo" class="station-info">駅名をタップすると接続路線をハイライト表示します。</div>
+
+    <section class="legend">
+      <div class="legend-title">停車記号</div>
+      <ul>
+        <li><span class="icon i-hub">◎</span> 全列車停車</li>
+        <li><span class="icon i-semi">△</span> 区間特急のみ停車</li>
+        <li><span class="icon i-rapid">○</span> 急行・普通が停車</li>
+        <li><span class="icon i-local">・</span> 普通のみ停車</li>
+      </ul>
+    </section>
+
+    <section class="lines" id="lineCards"></section>
+
+    <section class="map-wrap">
+      <svg id="routeMap" viewBox="0 0 1950 980" role="img" aria-label="カラベイ路線図"></svg>
+    </section>
+  </main>
+
+  <script>
+    const aliasToCanonical = {
+      "ナラター": "イラー中央",
+      "マラゼイ": "アーケイ中央"
+    };
+
+    const aliasByCanonical = {
+      "イラー中央": ["ナラター"],
+      "アーケイ中央": ["マラゼイ"]
+    };
+
+    const stationCoords = {
+      "ギュラベイ": [90, 210], "ティナネイキ": [170, 210], "ギリディネイ": [250, 210], "ミリフマレイ": [330, 210], "ショリギナセイ": [410, 210],
+      "イラー中央": [520, 210], "イリビレイセイ": [600, 210], "ラゼハビメイ": [680, 210], "フミシラレイ": [760, 210], "ナピリラセイ": [840, 210],
+      "ダリギナセイ": [920, 210], "ガネイキ": [1000, 210], "ネウリフマレイ": [1080, 210], "マウキビレイ": [1160, 210], "セラン中央": [1240, 210],
+      "リウニシェベン": [1320, 210], "ミュネイキ": [1400, 210], "デュラベイ": [1480, 210],
+
+      "タネイ・トライポート": [360, 100], "マリディア": [610, 300], "ギジェイキニ": [660, 350], "ティナレイキ": [720, 400], "ミラフレイ": [780, 450],
+      "ナーキ": [840, 500], "アーケイ中央": [900, 550], "ティレリウレイ": [970, 590], "ラデイキ": [1040, 630], "ヴィーラー": [1110, 665],
+      "アラデイキ": [1180, 700], "ギザレイキ": [1250, 735], "ヤーキ": [1320, 770], "ゾルアー": [1390, 800], "ノビレイ": [1460, 830],
+      "ハヴァレイキ": [1530, 860], "ダーフレイ": [1600, 890], "ビライタン": [1670, 910], "ゾパイタン": [1740, 925], "ヴィシャーン": [1800, 940], "ヤシャーン": [1860, 950],
+
+      "ビーパン": [1180, 280], "キカーン": [1120, 350], "マリアネイ": [1060, 420], "ハリアネイ": [1000, 490], "ギリディウネイ": [950, 525],
+
+      "イリケレイ第一信号場": [660, 320], "ギリネヴァレイ貨物駅": [740, 340], "イリケレイ第二信号場": [820, 360], "ビライツァ": [900, 380],
+      "ニヴィギナセイ第一信号場": [980, 360], "イギリヴィ貨物駅": [1060, 340], "ニヴィギナセイ第二信号場": [1140, 320],
+
+      "フリウヴァレン": [980, 430], "ミウニアネイ": [1060, 470], "ティリ・マジェイ": [1140, 510], "キラティ": [1220, 550], "ゴネイキ": [1300, 590],
+
+      "キラアネイ": [990, 160], "キラゴー": [1060, 130], "キラツァパ": [1130, 105], "ノツァパ": [1200, 95], "ノゴー": [1270, 90],
+
+      "カラー": [585, 255], "アマレイ": [645, 300], "サレイ": [705, 345], "タネイ・バン・ティラダ": [765, 390], "ダレイ": [825, 435],
+
+      "ナナゼイ": [970, 600], "ラグワー": [1030, 650], "フリカウ": [1090, 700], "イマ": [1150, 750],
+
+      "サツァディアン": [1470, 285], "ティリディアン": [1530, 360], "ティリ・チャラヒヴァン": [1510, 450], "ティレウキニ": [1380, 510],
+      "フリペレイ": [1290, 555], "デュラル・コンビナート": [1365, 610]
+    };
+
+    const lines = [
+      { name: "湾岸線", color: "#0f766e", serviceTypes: ["普通", "急行", "特急", "国際特急"], stations: [["ギュラベイ","hub"],["ティナネイキ","rapid"],["ギリディネイ","local"],["ミリフマレイ","local"],["ショリギナセイ","rapid"],["イラー中央","hub"],["イリビレイセイ","local"],["ラゼハビメイ","local"],["フミシラレイ","local"],["ナピリラセイ","local"],["ダリギナセイ","local"],["ガネイキ","local"],["ネウリフマレイ","local"],["マウキビレイ","rapid"],["セラン中央","hub"],["リウニシェベン","rapid"],["ミュネイキ","rapid"],["デュラベイ","hub"]] },
+      { name: "ハヴァレイキ線", color: "#c2410c", serviceTypes: ["普通", "急行", "区間特急", "特急"], stations: [["タネイ・トライポート","hub"],["イラー中央","hub"],["マリディア","hub"],["ギジェイキニ","semi"],["ティナレイキ","hub"],["ミラフレイ","semi"],["ナーキ","semi"],["アーケイ中央","hub"],["ティレリウレイ","semi"],["ラデイキ","hub"],["ヴィーラー","local"],["アラデイキ","local"],["ギザレイキ","local"],["ヤーキ","local"],["ゾルアー","local"],["ノビレイ","rapid"],["ハヴァレイキ","hub"],["ダーフレイ","hub"],["ビライタン","rapid"],["ゾパイタン","local"],["ヴィシャーン","local"],["ヤシャーン","hub"]] },
+      { name: "セラン線", color: "#4f46e5", serviceTypes: ["普通"], stations: [["セラン中央","hub"],["ビーパン","rapid"],["キカーン","local"],["マリアネイ","local"],["ハリアネイ","local"],["ギリディウネイ","rapid"],["アーケイ中央","hub"]] },
+      { name: "KIRT貨物線", color: "#0ea5e9", serviceTypes: ["普通","特急","貨物"], stations: [["イラー中央","hub"],["イリケレイ第一信号場","local"],["ギリネヴァレイ貨物駅","local"],["イリケレイ第二信号場","local"],["ビライツァ","rapid"],["ニヴィギナセイ第一信号場","local"],["イギリヴィ貨物駅","local"],["ニヴィギナセイ第二信号場","local"],["セラン中央","hub"]] },
+      { name: "KMRTゴネイキ線", color: "#b45309", serviceTypes: ["普通","急行"], stations: [["ビライツァ","rapid"],["フリウヴァレン","local"],["ミウニアネイ","local"],["マリアネイ","local"],["ティリ・マジェイ","rapid"],["キラティ","rapid"],["ゴネイキ","rapid"]] },
+      { name: "ツァパ線", color: "#2563eb", serviceTypes: ["普通"], stations: [["ダリギナセイ","local"],["キラアネイ","local"],["キラゴー","local"],["キラツァパ","local"],["ノツァパ","local"],["ノゴー","local"]] },
+      { name: "地下鉄1号線", color: "#ec4899", serviceTypes: ["普通"], stations: [["タネイ・トライポート","hub"],["イラー中央","hub"],["カラー","local"],["アマレイ","local"],["サレイ","local"],["タネイ・バン・ティラダ","local"],["ダレイ","local"]] },
+      { name: "地下鉄2号線", color: "#7c3aed", serviceTypes: ["普通"], stations: [["アーケイ中央","hub"],["ナナゼイ","local"],["ラグワー","local"],["フリカウ","local"],["イマ","local"]] },
+      { name: "デュラベイBRT", color: "#16a34a", serviceTypes: ["BRT"], stations: [["ミュネイキ","rapid"],["サツァディアン","local"],["ティリディアン","local"],["ティリ・チャラヒヴァン","local"],["ティレウキニ","local"],["キラティ","rapid"],["フリペレイ","local"],["デュラル・コンビナート","hub"]] }
+    ];
+
+    const svgNS = "http://www.w3.org/2000/svg";
+    const map = document.getElementById("routeMap");
+    const serviceFilter = document.getElementById("serviceFilter");
+    const lineCards = document.getElementById("lineCards");
+    const stationInfo = document.getElementById("stationInfo");
+
+    let selectedStation = null;
+
+    function e(tag, attrs = {}) {
+      const node = document.createElementNS(svgNS, tag);
+      Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, String(v)));
+      return node;
+    }
+
+    function canonical(name) {
+      return aliasToCanonical[name] || name;
+    }
+
+    function isActive(mark, filter) {
+      if (filter === "all") return true;
+      if (filter === "local") return true;
+      if (filter === "rapid") return mark === "hub" || mark === "rapid";
+      if (filter === "semiExpress") return mark === "hub" || mark === "semi";
+      if (filter === "limited") return mark === "hub";
+      return true;
+    }
+
+    function drawMarker(g, x, y, mark, state) {
+      const cls = ["marker"];
+      if (state.dim) cls.push("dim");
+      if (state.selected) cls.push("selected-marker");
+
+      if (mark === "hub") {
+        g.appendChild(e("circle", { cx: x, cy: y, r: 7, fill: "#ffffff", class: cls.join(" ") }));
+        return;
+      }
+      if (mark === "rapid") {
+        g.appendChild(e("circle", { cx: x, cy: y, r: 5, fill: "#dbeafe", class: cls.join(" ") }));
+        return;
+      }
+      if (mark === "semi") {
+        const pts = `${x},${y - 7} ${x - 7},${y + 5} ${x + 7},${y + 5}`;
+        g.appendChild(e("polygon", { points: pts, fill: "#ffedd5", class: cls.join(" ") }));
+        return;
+      }
+      g.appendChild(e("circle", { cx: x, cy: y, r: 3.3, fill: "#e5e7eb", class: cls.join(" ") }));
+    }
+
+    function stationDisplayName(id) {
+      const aliases = aliasByCanonical[id] || [];
+      if (!aliases.length) return id;
+      return `${id} / ${aliases.join(" / ")}`;
+    }
+
+    function buildCards() {
+      lineCards.innerHTML = lines.map((ln) => `
+        <article class="line-card">
+          <div class="line-head"><span class="swatch" style="background:${ln.color}"></span><span>${ln.name}</span></div>
+          <div class="types">${ln.serviceTypes.map((t) => `<span class="chip">${t}</span>`).join("")}</div>
+        </article>
+      `).join("");
+    }
+
+    function toggleSelected(id) {
+      selectedStation = selectedStation === id ? null : id;
+      draw();
+    }
+
+    function updateStationInfo(stationLines) {
+      if (!selectedStation) {
+        stationInfo.textContent = "駅名をタップすると接続路線をハイライト表示します。";
+        return;
+      }
+      const ln = Array.from(stationLines.get(selectedStation) || []);
+      const label = stationDisplayName(selectedStation);
+      stationInfo.innerHTML = `<strong>${label}</strong> を選択中。接続路線: ${ln.join(" / ") || "なし"}`;
+    }
+
+    function placeLabel(occupied, x, y, text, prefer = 0) {
+      const w = Math.max(46, text.length * 7 + 10);
+      const h = 18;
+      const offsets = [[10,-12],[10,16],[-10,-12],[-10,16],[0,-22],[0,24],[16,-26],[-16,30],[24,-10],[-24,18]];
+      let best = null;
+
+      for (let i = 0; i < offsets.length; i++) {
+        const k = (i + prefer) % offsets.length;
+        const [dx, dy] = offsets[k];
+        const x0 = x + dx;
+        const y0 = y + dy;
+        const bx = dx >= 0 ? x0 : x0 - w;
+        const by = dy >= 0 ? y0 - h + 2 : y0 - h + 2;
+        const box = { x: bx, y: by, w, h, dx, dy, tx: dx >= 0 ? x0 + 4 : x0 - w + 4, ty: y0 - 3 };
+
+        let overlap = 0;
+        for (const o of occupied) {
+          const sep = !(box.x + box.w < o.x || o.x + o.w < box.x || box.y + box.h < o.y || o.y + o.h < box.y);
+          if (sep) overlap += 1;
+        }
+
+        if (!best || overlap < best.overlap) {
+          best = { box, overlap };
+          if (overlap === 0) break;
+        }
+      }
+
+      occupied.push({ x: best.box.x - 2, y: best.box.y - 2, w: best.box.w + 4, h: best.box.h + 4 });
+      return best.box;
+    }
+
+    function draw() {
+      const filter = serviceFilter.value;
+      map.innerHTML = "";
+
+      const stationLines = new Map();
+      const stationMarks = new Map();
+
+      lines.forEach((ln) => {
+        ln.stations.forEach((st) => {
+          const id = canonical(st[0]);
+          if (!stationLines.has(id)) stationLines.set(id, new Set());
+          stationLines.get(id).add(ln.name);
+
+          if (!stationMarks.has(id)) stationMarks.set(id, st[1]);
+          else {
+            const prev = stationMarks.get(id);
+            if (prev !== "hub" && st[1] === "hub") stationMarks.set(id, "hub");
+            else if (prev === "local" && st[1] === "rapid") stationMarks.set(id, "rapid");
+          }
+        });
+      });
+
+      lines.forEach((ln) => {
+        const g = e("g");
+        const pts = [];
+        const containsSelected = selectedStation ? ln.stations.some((s) => canonical(s[0]) === selectedStation) : true;
+
+        ln.stations.forEach((st) => {
+          const id = canonical(st[0]);
+          const coord = stationCoords[id];
+          if (!coord) return;
+          pts.push(`${coord[0]},${coord[1]}`);
+        });
+
+        g.appendChild(e("polyline", {
+          points: pts.join(" "),
+          fill: "none",
+          stroke: ln.color,
+          "stroke-width": containsSelected ? 8 : 6,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          opacity: selectedStation ? (containsSelected ? 0.95 : 0.16) : 0.92
+        }));
+
+        const firstId = canonical(ln.stations[0][0]);
+        const firstPt = stationCoords[firstId];
+        if (firstPt) {
+          const lineLabel = e("text", {
+            x: firstPt[0] - 14,
+            y: firstPt[1] - 14,
+            class: "line-label",
+            "text-anchor": "end",
+            opacity: selectedStation ? (containsSelected ? 1 : 0.28) : 1
+          });
+          lineLabel.textContent = ln.name;
+          g.appendChild(lineLabel);
+        }
+
+        ln.stations.forEach((st) => {
+          const id = canonical(st[0]);
+          const mark = st[1];
+          const coord = stationCoords[id];
+          if (!coord) return;
+
+          const activeByType = isActive(mark, filter);
+          const dimByStation = selectedStation && id !== selectedStation;
+          const isSelected = selectedStation && id === selectedStation;
+
+          const markerGroup = e("g");
+          markerGroup.addEventListener("click", () => toggleSelected(id));
+          drawMarker(markerGroup, coord[0], coord[1], mark, { dim: !activeByType || dimByStation, selected: isSelected });
+          g.appendChild(markerGroup);
+        });
+
+        map.appendChild(g);
+      });
+
+      stationLines.forEach((set, id) => {
+        if (set.size < 2) {
+          return;
+        }
+        const pt = stationCoords[id];
+        if (!pt) return;
+        map.appendChild(e("circle", { cx: pt[0], cy: pt[1], r: selectedStation === id ? 13 : 11, class: "interchange" }));
+      });
+
+      const occupied = [];
+      const stationList = Array.from(stationLines.keys()).sort((a, b) => a.localeCompare(b, "ja"));
+      stationList.forEach((id, idx) => {
+        const coord = stationCoords[id];
+        if (!coord) return;
+
+        const text = stationDisplayName(id);
+        const box = placeLabel(occupied, coord[0], coord[1], text, idx % 6);
+        const selected = selectedStation && selectedStation === id;
+        const dim = selectedStation && selectedStation !== id;
+
+        if (Math.abs(box.dx) > 9 || Math.abs(box.dy) > 12) {
+          const lx = box.dx >= 0 ? box.x : box.x + box.w;
+          const ly = box.y + box.h / 2;
+          map.appendChild(e("line", {
+            x1: coord[0], y1: coord[1], x2: lx, y2: ly,
+            class: dim ? "label-leader dim" : "label-leader"
+          }));
+        }
+
+        const bg = e("rect", {
+          x: box.x,
+          y: box.y,
+          width: box.w,
+          height: box.h,
+          class: `${selected ? "label-bg selected-bg" : "label-bg"}${dim ? " dim" : ""}`
+        });
+        bg.addEventListener("click", () => toggleSelected(id));
+        map.appendChild(bg);
+
+        const label = e("text", {
+          x: box.tx,
+          y: box.ty,
+          class: `${selected ? "station-label selected-label" : "station-label"}${dim ? " dim" : ""}`
+        });
+        label.textContent = text;
+        label.addEventListener("click", () => toggleSelected(id));
+        map.appendChild(label);
+      });
+
+      updateStationInfo(stationLines);
+    }
+
+    serviceFilter.addEventListener("change", draw);
+    buildCards();
+    draw();
+  </script>
+</body>
+</html>
